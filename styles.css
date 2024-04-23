@@ -216,7 +216,7 @@
     align-items: center;
     gap: 8px;
     border-radius: 4px;
-    background: rgb(141, 141, 253);
+    background: #ECA227;
     height: 40px;
 }
 
@@ -240,7 +240,7 @@
     align-items: center;
     gap: 8px;
     border-radius: 4px;
-    background: rgb(141, 141, 253);
+    background: #ECA227;
     height: 40px;
 }
 
@@ -364,7 +364,7 @@ option {
     gap: 8px;
     border-radius: 4px;
     height: 40px;
-    border: 1px solid #8D8DFD;
+    border: 1px solid #ECA227;
     padding: 5px;
 }
 
