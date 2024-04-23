@@ -45,7 +45,31 @@ State.init({
 
 Para interactuar con los contratos inteligentes de LP de Maverick deberemos hacer uso de los siguientes métodos:
 
-**getUserBalances**: Obtiene el balance de cada uno de los tokens que tiene el usuario en la red de zkSyncEra.
+**getUserBalances**: Obtiene el balance de cada uno de los tokens que tiene el usuario en la red de zkSyncEra, para ello hacemos una consulta a la API correspondiente.
+
+To get information from an API we only have to make a call from BOS using asyncFetch to the corresponding URL.
+
+The following is the basic structure of an asyncFetch showing its main elements:
+  * **URL_API**: address of the API to be consumed.
+  * **method**: http method to be used (GET, POST, PUT or DELETE).
+  * **headers**: Additional metadata that is sent to the API to help the server understand what type of request is being sent.
+
+**Structure of asyncFetch**:
+```jsx
+  asyncFetch(
+    "URL_API",
+    {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  )
+    .then(({ body }) => { })
+    .catch((err) => { });
+```
+Para este caso la llamada a la API de maverick quedaría de la sigueinte manera:
 
 ```jsx
 const getUserBalances = () => {
