@@ -43,9 +43,9 @@ State.init({
 });
 ```
 
-Para interactuar con los contratos inteligentes de LP de Maverick deberemos hacer uso de los siguientes métodos:
+To interact with Maverick's LP smart contracts we will have to make use of the following methods:
 
-**getUserBalances**: Obtiene el balance de cada uno de los tokens que tiene el usuario en la red de zkSyncEra, para ello hacemos una consulta a la API correspondiente.
+**getUserBalances**: Obtains the balance of each of the tokens that the user has in the zkSyncEra network, for this we make a query to the corresponding API.
 
 To get information from an API we only have to make a call from BOS using asyncFetch to the corresponding URL.
 
@@ -69,7 +69,8 @@ The following is the basic structure of an asyncFetch showing its main elements:
     .then(({ body }) => { })
     .catch((err) => { });
 ```
-Para este caso la llamada a la API de maverick quedaría de la sigueinte manera:
+
+In this case, the maverick API call would look like this:
 
 ```jsx
 const getUserBalances = () => {
@@ -84,7 +85,7 @@ const getUserBalances = () => {
 };
 ```
 
-**getPools**: Obtiene el listado de pools disponibles para añadir liquidez en la red de zkSyncEra. 
+**getPools**: Gets the list of available pools to add liquidity in the zkSyncEra network.
 
 ```jsx
 const getPools = () => {
@@ -108,7 +109,7 @@ const getPools = () => {
 };
 ```
 
-**getAccountAllowance**: Obtiene el allowance disponible del usuario del token seleccionado a añadir liquidez.
+**getAccountAllowance**: Gets the user's available allowance of the selected token to add liquidity.
 
 ```jsx
 const getAccountAllowance = (data) => {
@@ -142,7 +143,7 @@ const getAccountAllowance = (data) => {
 };
 ```
 
-**addLiquidity**: Este método permite añadir liquidez a la pool seleccionada.
+**addLiquidity**: This method allows you to add liquidity to the selected pool. From this method the instance of the smart contract is created using the address and the corresponding ABI to later interact with the smart contract.
 
 ```jsx
 const addLiquidity = () => {
