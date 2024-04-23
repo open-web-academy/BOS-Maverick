@@ -279,7 +279,13 @@ Once this is done, you can click **Connect Wallet** to run metamask and connect 
 
 Once metamask is connected we will be able to start interacting with the UI.
 
-**********PASOS NECESARIOS PARA AÑADIR LIQUIDEZ A UNA POOL**********
+To add liquidity to a pool we must follow the following steps:
+
+1.- Select a pool.
+2.- Select the pool options. 
+3.- Select the type of liquidity (right or left).
+4.- Enter the amount of tokens to be added.
+5.- Validate the information and accept the transaction in metamask.
 
 <img src="https://drive.google.com/uc?id=1S3nu7eEUs-7PW0kOT4VJpNZHdI5QaodR" width="50%">
 
