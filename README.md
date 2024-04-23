@@ -6,67 +6,247 @@ This repository is an example of how to implement Maverick LP contracts in BOS t
 
 ## How to implement the LP contract of Maverick in BOS?
 
-To implement the Token Factory contract and be able to create new tokens from our BOS component we will have to make some configurations and calls to the contract methods.
+To implement the Maverick LP contract and be able to add liquidity from our BOS component we will have to make some configurations and calls to the contract methods.
 
 The first thing we must do is to initialize our contract and call the corresponding ABI to obtain the information of the methods of the contract, for them we make use of the following lines:
 
 ```jsx
-const factoryContract = "0xAc9221060455f60dfFF8bf8C4f601E500AC095D7";
+const routerAbi = fetch(
+  "https://raw.githubusercontent.com/yaairnaavaa/Maverick/main/maverick-router.txt"
+);
 
-const factoryAbi = fetch(
-  "https://raw.githubusercontent.com/open-web-academy/BOS-TokenFactory/main/TokenFactoryABI.txt"
+const poolAbi = fetch(
+  "https://raw.githubusercontent.com/yaairnaavaa/Maverick/main/IPoolABI.txt"
 );
 ```
 
-Once this is done, we will proceed to initialize each of the state variables as well as each of the methods to change their values.
+Once this is done, we will proceed to initialize each of the state variables.
 
 ```jsx
-const [sender, setSender] = useState(null);
-const [tokens, setTokens] = useState([]);
-const [tokenName, setTokenName] = useState("MYTOKEN");
-const [tokenSymbol, setTokenSymbol] = useState("MTKN");
-const [initialSupply, setInitialSupply] = useState(10000);
-const [minting, setMinting] = useState(false);
-const [tabSelected, setTabSelected] = useState("factory");
+State.init({
+  isZkSync: false,
+  routerContract: "0x39E098A153Ad69834a9Dac32f0FCa92066aD03f4",
+  step: 1,
+  poolSelected: undefined,
+  poolModeSelected: POOLSMODE[0],
+  needMoreAllowanceTA: false,
+  needMoreAllowanceTB: false,
+  amountInputTokenA: null,
+  inputBalanceTokenA: null,
+  amountInputTokenB: null,
+  inputBalanceTokenB: null,
+  poolList: [],
+  pools: [],
+  poolOptions: [],
+  need2Tokens: true,
+  onlyRight: false,
+});
 ```
 
-As mentioned before, the Token Factory contract has two main methods, to call them from BOS we will have to do the following: 
+Para interactuar con los contratos inteligentes de LP de Maverick deberemos hacer uso de los siguientes métodos:
 
-**getTokens**: With this method we get each of the tokens created in the factory to later show them in the UI:
+**getUserBalances**: Obtiene el balance de cada uno de los tokens que tiene el usuario en la red de zkSyncEra.
 
 ```jsx
-const getTokens = () => {
-  const factory = new ethers.Contract(
-    factoryContract,
-    factoryAbi.body,
+const getUserBalances = () => {
+  const accounts = Ethers.send("eth_requestAccounts", []);
+  asyncFetch(`https://api.mav.xyz/api/v4/tokenBalances/324/${accounts[0]}`)
+    .catch((err) => {
+      console.log(err);
+    })
+    .then((res) => {
+      State.update({ userBalances: res.body.tokenBalances });
+    });
+};
+```
+
+**getPools**: Obtiene el listado de pools disponibles para añadir liquidez en la red de zkSyncEra. 
+
+```jsx
+const getPools = () => {
+  asyncFetch(`https://api.mav.xyz/api/v4/pools/324
+          `)
+    .catch((err) => {
+      console.log(err);
+    })
+    .then((res) => {
+      let poolList = [
+        ...new Map(res.body.pools.map((item) => [item["name"], item])).values(),
+      ];
+      pools = res.body.pools;
+      State.update({
+        poolList: poolList,
+        poolSelected: poolList[0],
+        selectedPoolOptions: poolList[0],
+      });
+      getPoolOptions(poolList[0].name, res.body.pools);
+    });
+};
+```
+
+**getAccountAllowance**: Obtiene el allowance disponible del usuario del token seleccionado a añadir liquidez.
+
+```jsx
+const getAccountAllowance = (data) => {
+  let token = data.token;
+  if (token.symbol == "ETH") {
+    data.mode == "TA"
+      ? State.update({ tokenAAllowance: undefined })
+      : State.update({ tokenBAllowance: undefined });
+  } else {
+    asyncFetch(
+      "https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json"
+    ).then((res) => {
+      const contract = token.address;
+      const approveContract = new ethers.Contract(
+        contract,
+        res.body,
+        Ethers.provider().getSigner()
+      );
+      approveContract
+        .allowance(state.sender, state.routerContract)
+        .then((res) => {
+          console.log(res);
+          if (data.mode == "TA") {
+            State.update({ tokenAAllowance: parseInt(res.toString()) });
+          } else {
+            State.update({ tokenBAllowance: parseInt(res.toString()) });
+          }
+        });
+    });
+  }
+};
+```
+
+**addLiquidity**: Este método permite añadir liquidez a la pool seleccionada.
+
+```jsx
+const addLiquidity = () => {
+  const router = new ethers.Contract(
+    state.routerContract,
+    routerAbi.body,
     Ethers.provider().getSigner()
   );
 
-  factory.getAllTokens().then((res) => {
-    setTokens(res);
-    console.log(res);
+  const pool = new ethers.Contract(
+    state.selectedPoolOptions.id,
+    poolAbi.body,
+    Ethers.provider().getSigner()
+  );
+
+  let amountInA, amountInB;
+  let inputA = state.amountInputTokenA;
+  let inputB = state.amountInputTokenB;
+  let usingETH =
+    state.selectedPoolOptions.tokenA.symbol == "ETH" ||
+    state.selectedPoolOptions.tokenB.symbol == "ETH";
+  let tokUsedETH =
+    state.selectedPoolOptions.tokenA.symbol == "ETH" ? "tokA" : "tokB";
+
+  if (state.poolModeSelected.id == 1) {
+    amountInA = ethers.utils.parseUnits(
+      inputA,
+      state.selectedPoolOptions.tokenA.decimals
+    );
+    amountInB = ethers.utils.parseUnits(
+      "0",
+      state.selectedPoolOptions.tokenB.decimals
+    );
+  } else if (state.poolModeSelected.id == 2) {
+    amountInA = ethers.utils.parseUnits(
+      "0",
+      state.selectedPoolOptions.tokenA.decimals
+    );
+    amountInB = ethers.utils.parseUnits(
+      inputB,
+      state.selectedPoolOptions.tokenB.decimals
+    );
+  }
+
+  const overrides = {
+    value: usingETH
+      ? tokUsedETH == "tokA"
+        ? amountInA
+        : amountInB
+      : ethers.utils.parseUnits("0", 18),
+    gasLimit: 3000000,
+  };
+
+  pool.getState().then((res) => {
+    let lowerTick = res[0];
+
+    let position =
+      state.poolModeSelected.id == 1 ? lowerTick - 1 : lowerTick + 1;
+
+    pool.binPositions(res[0], state.poolModeSelected.id).then((res) => {
+      let liquidityParams = [];
+      if (state.poolModeSelected.id == 1 || state.poolModeSelected.id == 2) {
+        liquidityParams.push({
+          kind: state.poolModeSelected.id,
+          pos: position,
+          isDelta: false,
+          deltaA: amountInA,
+          deltaB: amountInB,
+        });
+      }
+      try {
+        router
+          .addLiquidityToPool(
+            state.selectedPoolOptions.id,
+            state.userNFT ? state.userNFT : 0,
+            liquidityParams,
+            0,
+            0,
+            1e13,
+            overrides
+          )
+          .then((res) => {
+            State.update({
+              addingLiquidity: true,
+            });
+            setTimeout(() => {
+              State.update({
+                step: 1,
+                poolSelected: undefined,
+                selectedPoolOptions: undefined,
+                poolOptions: undefined,
+                poolModeSelected: POOLSMODE[0],
+                needMoreAllowanceTA: false,
+                needMoreAllowanceTB: false,
+                amountInputTokenA: null,
+                inputBalanceTokenA: null,
+                amountInputTokenB: null,
+                inputBalanceTokenB: null,
+                need2Tokens: true,
+                addingLiquidity: false,
+                onlyRight: false,
+                tokenABalance: undefined,
+                tokenBBalance: undefined,
+                tokenAAllowance: undefined,
+                tokenBAllowance: undefined,
+                moreTokenAAllowance: undefined,
+                moreTokenBAllowance: undefined,
+              });
+              getUserBalances();
+            }, 25000);
+          });
+      } catch (err) {
+        console.log(err);
+      }
+    });
   });
 };
 ```
 
-**createToken**: With this method we create a new token, the parameters to be sent are the following:
-  * **tokenName**: token name to create.
-  * **tokenSymbol**: token symbol to craete.
-  * **amount**: initial token supply to create.
-
-```jsx
-
-```
-
 ## How to test the Component?
 
-To run this project in BOS you must run the widget (BOS-TokenFactory.jsx) on an available BOS gateway, for example: [near.social ](https://near.social/edit)
+To run this project in BOS you must run the widget (BOS-Maverick.jsx) on an available BOS gateway, for example: [near.social ](https://near.social/edit)
 
 Once the code for the widget has been added we can render it by clicking on the preview button to render the component.
 
 <img src="https://drive.google.com/uc?id=1oiuRLjC2RJDts2K57av4I5YzuGtSukVT" width="50%">
 
-For this example you will also need to have installed and configured [metamask](https://metamask.io/) and [Sepolia](https://sepolia.dev/) network.
+For this example you will also need to have installed and configured [metamask](https://metamask.io/) and [zkSyncEra](https://docs.zksync.io/build/quick-start/add-zksync-to-metamask.html) network.
 
 Once this is done, you can click **Connect Wallet** to run metamask and connect the component to your account.
 
@@ -74,11 +254,7 @@ Once this is done, you can click **Connect Wallet** to run metamask and connect 
 
 Once metamask is connected we will be able to start interacting with the UI.
 
-The first step to create a new token is to fill in the form with the three fields: token name, token symbol and token supply.
-
-Then we must click on the "Create Token" button which will launch a transaction in metamask and we must confirm it to start with the creation of our token.
-
-Finally we can go to the "Token List" tab where we can see all the tokens created with their respective addresses to add the token to metamask.
+**********PASOS NECESARIOS PARA AÑADIR LIQUIDEZ A UNA POOL**********
 
 <img src="https://drive.google.com/uc?id=1S3nu7eEUs-7PW0kOT4VJpNZHdI5QaodR" width="50%">
 
