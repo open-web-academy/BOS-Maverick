@@ -64,13 +64,13 @@ To run this project in BOS you must run the widget (BOS-TokenFactory.jsx) on an 
 
 Once the code for the widget has been added we can render it by clicking on the preview button to render the component.
 
-<img src="https://drive.google.com/uc?id=16VU0L6J8Zd4_lUMP5zpgzIpOKmWghguQ" width="50%">
+<img src="https://drive.google.com/uc?id=1oiuRLjC2RJDts2K57av4I5YzuGtSukVT" width="50%">
 
 For this example you will also need to have installed and configured [metamask](https://metamask.io/) and [Sepolia](https://sepolia.dev/) network.
 
 Once this is done, you can click **Connect Wallet** to run metamask and connect the component to your account.
 
-<img src="https://drive.google.com/uc?id=1ofh3_jT6FGug0JON-EM0IFay4oq4JQNG" width="50%">
+<img src="https://drive.google.com/uc?id=1b9qgOoFL9a1eTi67aWYqH1UeGnYLa7Ye" width="50%">
 
 Once metamask is connected we will be able to start interacting with the UI.
 
