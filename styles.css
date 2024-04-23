@@ -18,8 +18,9 @@
 
 .ProtocolContainer {
     display: flex;
-    width: 400px;
-    padding: 0px 8px;
+    background: #ECA227;
+    width: 100%;
+    border-radius: 14px 14px 0px 0px;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
